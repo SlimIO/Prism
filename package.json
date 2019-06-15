@@ -1,7 +1,7 @@
 {
     "name": "@slimio/prism",
     "version": "0.1.0",
-    "description": "",
+    "description": "SlimIO distribution server addon",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
