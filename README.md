@@ -1,28 +1,24 @@
-# prism
+# Prism
 ![version](https://img.shields.io/badge/version-0.1.0-blue.svg)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/SlimIO/is/commit-activity)
 ![MIT](https://img.shields.io/github/license/mashape/apistatus.svg)
 
 SlimIO Prism Addon. This addon has been designed to be a Distribution Server (it manage archive of Addons).
 
-## Requirements
-- Node.js v10 or higher
-
 ## Getting Started
-
-This package is available in the Node Package Repository and can be easily installed with [npm](https://docs.npmjs.com/getting-started/what-is-npm) or [yarn](https://yarnpkg.com).
+This package is available in the SlimIO Package Registry and can be easily installed with [SlimIO CLI](https://github.com/SlimIO/CLI).
 
 ```bash
-$ npm i @slimio/prism
+$ slimio --add prism
 # or
-$ yarn add @slimio/prism
+$ slimio --add https://github.com/SlimIO/Prism
 ```
 
-## Usage example
-TBC
+## Dependencies
 
-## API
-TBC
+|Name|Refactoring|Security Risk|Usage|
+|---|---|---|---|
+|[@slimio/addon](https://github.com/SlimIO/Addon)|Minor|Low|Addon container|
 
 ## License
 MIT
