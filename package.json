@@ -14,7 +14,14 @@
         "type": "git",
         "url": "git+https://github.com/SlimIO/Prism.git"
     },
-    "keywords": [],
+    "keywords": [
+        "SlimIO",
+        "distribution",
+        "server",
+        "prism",
+        "archive",
+        "manager"
+    ],
     "author": "SlimIO",
     "license": "MIT",
     "bugs": {
