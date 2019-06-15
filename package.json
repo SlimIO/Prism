@@ -4,8 +4,6 @@
     "description": "SlimIO distribution server addon",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js",
-        "prepublishOnly": "pkg-ok",
         "test": "ava --verbose",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
         "coverage": "c8 -r=\"html\" npm test"
