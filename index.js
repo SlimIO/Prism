@@ -1,12 +1,17 @@
 // Require Node.js Dependencies
+const zlib = require("zlib");
 const {
     createWriteStream,
-    promises: { access, mkdir }
+    createReadStream,
+    promises: { access, mkdir, readdir }
 } = require("fs");
-const { join } = require("path");
-
+const { join, parse } = require("path");
+const { pipeline } = require("stream");
+const { promisify } = require("util");
 // Require Third-party Dependencies
 const uuid = require("uuid/v4");
+const tar = require("tar-fs");
+const premove = require("premove");
 
 // Require SlimIO Dependencies
 const TimeMap = require("@slimio/timemap");
@@ -16,6 +21,8 @@ const Addon = require("@slimio/addon");
 const ARCHIVES_DIR = join(__dirname, "..", "..", "archives");
 const STREAM_ID = new TimeMap(30000);
 
+// Vars
+const pipeAsync = promisify(pipeline);
 
 const Prism = new Addon("prism")
     .lockOn("events")
@@ -43,14 +50,40 @@ Prism.on("start", async() => {
     await createArchivesDir();
 });
 
-function brotliDecompress(filename) {
-    
+async function brotliDecompress(filename) {
+    const { name } = parse(filename);
+    const tarExtractDir = join(ARCHIVES_DIR, "temp", name);
+
+    await pipeAsync(
+        createReadStream(join(ARCHIVES_DIR, filename)),
+        tar.extract(tarExtractDir)
+    );
+
+    try {
+        await mkdir(join(ARCHIVES_DIR, name));
+    }
+    catch (err) {
+        // Ignore
+    }
+
+    const files = await readdir(tarExtractDir);
+    // eslint-disable-next-line
+    const streamPromises = files.map((file) => {
+        return pipeAsync(
+            createReadStream(join(tarExtractDir, file)),
+            zlib.createBrotliDecompress(),
+            createWriteStream(join(ARCHIVES_DIR, name, file))
+        );
+    });
+    await Promise.all(streamPromises);
+
+    await premove(tarExtractDir);
 }
 
 async function startBundle(header, name) {
     const writeStream = createWriteStream(join(ARCHIVES_DIR, name));
     const id = uuid();
-    STREAM_ID.set(id, writeStream);
+    STREAM_ID.set(id, { writeStream, name });
 
     return id;
 }
@@ -59,19 +92,22 @@ async function sendBundle(header, id, chunk) {
     if (!STREAM_ID.has(id)) {
         throw new Error(`Write stream doesn't exist for id ${id}`);
     }
-    const writeStream = STREAM_ID.get(id);
-    writeStream.write(chunk);
+    const { writeStream } = STREAM_ID.get(id);
+    writeStream.write(Buffer.from(chunk.data));
 }
 
 async function endBundle(header, id) {
     try {
-        const stream = STREAM_ID.get(id);
-        stream.destroy();
+        const { writeStream, name } = STREAM_ID.get(id);
+        writeStream.destroy();
         STREAM_ID.delete(id);
+        await brotliDecompress(name);
 
         return true;
     }
     catch (err) {
+        console.log(err);
+
         return false;
     }
 }
