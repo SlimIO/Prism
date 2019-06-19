@@ -9,7 +9,8 @@ const ARCHIVES_DIR = join(__dirname, "..", "..", "archives");
 const Addon = require("@slimio/addon");
 
 const Prism = new Addon("prism")
-    .lockOn("events");
+    .lockOn("events")
+    .lockOn("socket");
 
 Prism.on("awake", () => {
     prism.ready();
@@ -26,8 +27,11 @@ async function createArchivesDir() {
     }
 }
 
-async function receiveBundle(readableStream, name) {
+Prism.on("start", async() => {
     await createArchivesDir();
+});
+
+async function receiveBundle(header, readableStream, name) {
     readableStream.pipe(join(ARCHIVES_DIR, name));
 }
 
