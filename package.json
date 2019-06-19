@@ -27,7 +27,10 @@
     },
     "homepage": "https://github.com/SlimIO/Prism#readme",
     "dependencies": {
-        "@slimio/addon": "^0.17.1"
+        "@slimio/addon": "^0.17.1",
+        "@slimio/timemap": "^0.2.0",
+        "tar-fs": "^2.0.0",
+        "uuid": "^3.3.2"
     },
     "devDependencies": {
         "@commitlint/cli": "^8.0.0",
