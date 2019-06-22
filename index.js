@@ -3,7 +3,7 @@ const zlib = require("zlib");
 const {
     createWriteStream,
     createReadStream,
-    promises: { access, mkdir, readdir }
+    promises: { access, mkdir, readdir, writeFile }
 } = require("fs");
 const { join, parse } = require("path");
 const { pipeline } = require("stream");
@@ -19,7 +19,9 @@ const Addon = require("@slimio/addon");
 
 // CONSTANTS
 const ARCHIVES_DIR = join(__dirname, "..", "..", "archives");
+const ADDONS_DIR = join(__dirname, "..");
 const STREAM_ID = new TimeMap(30000);
+const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
 
 // Vars
 const pipeAsync = promisify(pipeline);
@@ -42,12 +44,41 @@ async function createArchivesDir() {
         }
     }
 }
+
+async function createArchiveJSON() {
+    const json = { addons: {}, modules: {} };
+    const files = await readdir(ARCHIVES_DIR, { withFileTypes: true });
+    for (const dirent of files) {
+        if (!dirent.isFile() || dirent.name === "archives.json") {
+            continue;
+        }
+
+        const fileName = parse(dirent.name).name;
+        const [type, ...rest] = fileName.split("-");
+        if (!ARCHIVE_TYPES.has(type)) {
+            continue;
+        }
+        const jsonType = json[type.toLowerCase() === "addon" ? "addons" : "modules"];
+        const version = rest.pop();
+        const addonName = rest.join("-");
+
+        if (Reflect.has(jsonType, addonName)) {
+            jsonType[addonName].push(version);
+        }
+        else {
+            jsonType[addonName] = [version];
+        }
+    }
+    await writeFile(join(ARCHIVES_DIR, "archives.json"), JSON.stringify(json, null, 4));
+}
+
 STREAM_ID.on("expiration", (key, value) => {
     console.log(`STREAM_ID key ${key} has expired!`);
 });
 
 Prism.on("start", async() => {
     await createArchivesDir();
+    await createArchiveJSON();
 });
 
 async function brotliDecompress(filename) {
@@ -60,7 +91,7 @@ async function brotliDecompress(filename) {
     );
 
     try {
-        await mkdir(join(ARCHIVES_DIR, name));
+        await mkdir(join(ADDONS_DIR, name));
     }
     catch (err) {
         // Ignore
@@ -72,7 +103,7 @@ async function brotliDecompress(filename) {
         return pipeAsync(
             createReadStream(join(tarExtractDir, file)),
             zlib.createBrotliDecompress(),
-            createWriteStream(join(ARCHIVES_DIR, name, file))
+            createWriteStream(join(ADDONS_DIR, name, file))
         );
     });
     await Promise.all(streamPromises);
@@ -98,10 +129,9 @@ async function sendBundle(header, id, chunk) {
 
 async function endBundle(header, id) {
     try {
-        const { writeStream, name } = STREAM_ID.get(id);
+        const { writeStream } = STREAM_ID.get(id);
         writeStream.destroy();
         STREAM_ID.delete(id);
-        await brotliDecompress(name);
 
         return true;
     }
@@ -112,8 +142,14 @@ async function endBundle(header, id) {
     }
 }
 
+// eslint-disable-next-line max-params
+async function installArchive(header, name, version, force = false) {
+    await brotliDecompress(name, version);
+}
+
 Prism.registerCallback("start_bundle", startBundle);
 Prism.registerCallback("send_bundle", sendBundle);
 Prism.registerCallback("end_bundle", endBundle);
+Prism.registerCallback("install_archive", installArchive);
 
 module.exports = Prism;
