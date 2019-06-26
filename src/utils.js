@@ -8,10 +8,12 @@ const { join, parse, resolve } = require("path");
 
 // Require Third-party Dependencies
 const semver = require("semver");
+const semverSort = require("semver-sort");
 
 // CONSTANTS
 const ADDONS_DIR = join(__dirname, "..", "..");
 const ARCHIVES_DIR = resolve(ADDONS_DIR, "..", "archives");
+const ARCHIVES_JSON_PATH = join(ARCHIVES_DIR, "archives.json");
 const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
 
 async function createArchivesDir() {
@@ -23,6 +25,26 @@ async function createArchivesDir() {
             await mkdir(ARCHIVES_DIR);
         }
     }
+}
+
+async function writeArchiveJSON(obj) {
+    await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(obj, null, 4));
+}
+
+async function addInArchiveJSON(type, addonName, version) {
+    const archiveFile = await readFile(ARCHIVES_JSON_PATH, { encoding: "utf8" });
+    const archiveJSON = JSON.parse(archiveFile);
+    if (Reflect.has(archiveJSON[type], addonName)) {
+        if (!archiveJSON[type][addonName].includes(version)) {
+            const versions = archiveJSON[type][addonName];
+            versions.push(version);
+            semverSort.desc(versions);
+        }
+    }
+    else {
+        archiveJSON[type][addonName] = [version];
+    }
+    await writeArchiveJSON(archiveJSON);
 }
 
 async function createArchiveJSON() {
@@ -41,13 +63,15 @@ async function createArchiveJSON() {
 
         const jsonType = json[type.toLowerCase() === "addon" ? "addons" : "modules"];
         if (Reflect.has(jsonType, addonName)) {
-            jsonType[addonName].push(version);
+            const versions = jsonType[addonName];
+            versions.push(version);
+            semverSort.desc(versions);
         }
         else {
             jsonType[addonName] = [version];
         }
     }
-    await writeFile(join(ARCHIVES_DIR, "archives.json"), JSON.stringify(json, null, 4));
+    await writeArchiveJSON(json);
 }
 
 function splitTAR(filename) {
@@ -86,8 +110,11 @@ function isArchiveTAR(fileName, typeToLower = false) {
 module.exports = {
     ADDONS_DIR,
     ARCHIVES_DIR,
+    ARCHIVES_JSON_PATH,
     ARCHIVE_TYPES,
+
     createArchivesDir,
+    addInArchiveJSON,
     createArchiveJSON,
     splitTAR,
     isArchiveTAR

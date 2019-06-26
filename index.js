@@ -25,7 +25,9 @@ const {
     ADDONS_DIR,
     ARCHIVES_DIR,
     ARCHIVE_TYPES,
+
     createArchivesDir,
+    addInArchiveJSON,
     createArchiveJSON,
     splitTAR,
     isArchiveTAR
@@ -45,31 +47,6 @@ const Prism = new Addon("prism")
 Prism.on("awake", () => {
     Prism.ready();
 });
-
-// async function createArchiveJSON() {
-//     const json = { addons: {}, modules: {} };
-//     const files = await readdir(ARCHIVES_DIR, { withFileTypes: true });
-//     for (const dirent of files) {
-//         if (!dirent.isFile() || dirent.name === "archives.json") {
-//             continue;
-//         }
-
-//         const isTAR = isArchiveTAR(dirent.name);
-//         if (!isTAR) {
-//             continue;
-//         }
-//         const [type, addonName, version] = isTAR;
-
-//         const jsonType = json[type.toLowerCase() === "addon" ? "addons" : "modules"];
-//         if (Reflect.has(jsonType, addonName)) {
-//             jsonType[addonName].push(version);
-//         }
-//         else {
-//             jsonType[addonName] = [version];
-//         }
-//     }
-//     await writeFile(join(ARCHIVES_DIR, "archives.json"), JSON.stringify(json, null, 4));
-// }
 
 STREAM_ID.on("expiration", (key, value) => {
     console.log(`STREAM_ID key ${key} has expired!`);
@@ -111,6 +88,7 @@ async function brotliDecompress(type, filename, version, force) {
     await premove(tarExtractDir);
 }
 
+// add force option if already exist ?
 async function startBundle(header, fileName) {
     const { name } = parse(fileName);
     const isTAR = isArchiveTAR(name, true);
@@ -148,18 +126,7 @@ async function endBundle(header, id) {
         writeStream.destroy();
         STREAM_ID.delete(id);
 
-        const archiveJSONPath = join(ARCHIVES_DIR, "archives.json");
-        const archiveFile = await readFile(archiveJSONPath, { encoding: "utf8" });
-        const archiveJSON = JSON.parse(archiveFile);
-        if (Reflect.has(archiveJSON[type], addonName)) {
-            if (!archiveJSON[type][addonName].includes(version)) {
-                archiveJSON[type][addonName].push(version);
-            }
-        }
-        else {
-            archiveJSON[type][addonName] = [version];
-        }
-        await writeFile(archiveJSONPath, JSON.stringify(archiveJSON, null, 4));
+        await addInArchiveJSON(type, addonName, version);
 
         return true;
     }
