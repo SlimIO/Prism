@@ -1,9 +1,7 @@
 // Require Node.js Dependencies
 const {
-    createWriteStream,
-    createReadStream,
-    promises: { access, mkdir, readdir, writeFile, readFile }
-} = require("fs");
+    access, mkdir, readdir, writeFile, readFile
+} = require("fs").promises;
 const { join, parse, resolve } = require("path");
 
 // Require Third-party Dependencies
@@ -54,8 +52,9 @@ async function createArchiveJSON() {
         if (!dirent.isFile() || dirent.name === "archives.json") {
             continue;
         }
-
-        const isTAR = isArchiveTAR(dirent.name);
+        console.log(`createArchiveJSON: ${dirent.name}`);
+        const { name } = parse(dirent.name);
+        const isTAR = isArchiveTAR(name);
         if (!isTAR) {
             continue;
         }
