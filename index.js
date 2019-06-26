@@ -58,21 +58,27 @@ Prism.on("start", async() => {
 });
 
 // eslint-disable-next-line max-params
-async function brotliDecompress(type, filename, version, force) {
-    const { name } = parse(filename);
-    const tarExtractDir = join(ARCHIVES_DIR, "temp", name);
+async function brotliDecompress(type, addonName, version, force = false) {
+    const fileName = `${type}-${addonName}-${version}.tar`;
+    console.log(fileName);
+    const tarExtractDir = join(ARCHIVES_DIR, "temp", addonName);
+    console.log(`tarExtractDir ${tarExtractDir}`);
 
     await pipeAsync(
-        createReadStream(join(ARCHIVES_DIR, filename)),
+        createReadStream(join(ARCHIVES_DIR, fileName)),
         tar.extract(tarExtractDir)
     );
+    console.log("extraction ok");
+
 
     try {
-        await mkdir(join(ADDONS_DIR, name));
+        await mkdir(join(ADDONS_DIR, addonName));
     }
     catch (err) {
         // Ignore
     }
+
+    console.log("mkdir ok");
 
     const files = await readdir(tarExtractDir);
     // eslint-disable-next-line
@@ -80,7 +86,7 @@ async function brotliDecompress(type, filename, version, force) {
         return pipeAsync(
             createReadStream(join(tarExtractDir, file)),
             zlib.createBrotliDecompress(),
-            createWriteStream(join(ADDONS_DIR, name, file))
+            createWriteStream(join(ADDONS_DIR, addonName, file))
         );
     });
     await Promise.all(streamPromises);
@@ -139,11 +145,37 @@ async function endBundle(header, id) {
 
 // eslint-disable-next-line max-params
 async function installArchive(header, name, version, options = Object.create(null)) {
-    // const type = options.type ? options.type.toLowerCase() : "Addon";
-    // const { type = "Addon", force = false } = options;
-    // if (!ARCHIVE_TYPES.has(type))
+    console.log("installArchive");
+    if (typeof name !== "string") {
+        throw new TypeError("Name param must be a typeof <string>");
+    }
+    console.log("name typeError passed");
+    if (typeof version !== "string") {
+        throw new TypeError("Version param must be a typeof <string>");
+    }
+    console.log("version typeError passed");
+    const { type = "Addon", force = false } = options;
+    if (!ARCHIVE_TYPES.has(type)) {
+        throw new Error(`Type ${type} is not repertoried`);
+    }
+    const JSONType = type === "Addon" ? "addons" : "modules";
+    console.log(JSONType);
 
-    await brotliDecompress(type, name, version, force);
+    const ver = version;
+    if (version === "latest") {
+        console.log("latest");
+        const archiveFile = await readFile(ARCHIVES_JSON_PATH, { encoding: "utf8" });
+        const archiveJSON = JSON.parse(archiveFile);
+
+        const keys = Object.keys(archiveJSON[JSONType]);
+        if (!keys.includes(name)) {
+            throw new Error(`Name ${name} is not repertoried`);
+        }
+        const versions = archiveJSON[JSONType][name];
+    }
+    console.log("find good version");
+    await brotliDecompress(type, name, ver, force);
+
 }
 
 Prism.registerCallback("start_bundle", startBundle);
