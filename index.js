@@ -166,6 +166,10 @@ async function installArchive(header, name, version, options = Object.create(nul
         const versions = archiveJSON[JSONType][name];
     }
     await brotliDecompress(type, name, ver, force);
+
+    if (JSONType === "addons") {
+        await Prism.sendOne("gate.set_config", [`addons.${name}`, { active: true }]);
+    }
 }
 
 Prism.registerCallback("start_bundle", startBundle);
