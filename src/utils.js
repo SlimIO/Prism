@@ -6,7 +6,7 @@ const { join, parse, resolve } = require("path");
 
 // Require Third-party Dependencies
 const semver = require("semver");
-const semverSort = require("semver-sort");
+const semiver = require("semiver");
 
 // CONSTANTS
 const ADDONS_DIR = join(__dirname, "..", "..");
@@ -27,14 +27,14 @@ async function addInArchiveJSON(type, addonName, version) {
     const archiveJSON = JSON.parse(archiveFile);
     if (Reflect.has(archiveJSON[type], addonName)) {
         if (!archiveJSON[type][addonName].includes(version)) {
-            const versions = archiveJSON[type][addonName];
-            versions.push(version);
-            semverSort.desc(versions);
+            archiveJSON[type][addonName].push(version);
+            archiveJSON[type][addonName] = archiveJSON[type][addonName].sort(semiver);
         }
     }
     else {
         archiveJSON[type][addonName] = [version];
     }
+
     await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(archiveJSON, null, 4));
 }
 
@@ -60,9 +60,8 @@ async function createArchiveJSON() {
 
         const jsonType = json[type.toLowerCase() === "addon" ? "addons" : "modules"];
         if (Reflect.has(jsonType, addonName)) {
-            const versions = jsonType[addonName];
-            versions.push(version);
-            semverSort.desc(versions);
+            jsonType[addonName].push(version);
+            jsonType[addonName] = jsonType[addonName].sort(semiver);
         }
         else {
             jsonType[addonName] = [version];
