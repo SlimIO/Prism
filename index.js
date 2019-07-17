@@ -31,6 +31,7 @@ const {
 // CONSTANTS
 const STREAM_ID = new TimeMap(30000);
 
+
 // Vars
 const pipeAsync = promisify(pipeline);
 
@@ -99,7 +100,7 @@ async function brotliDecompress(type, addonName, version, force = false) {
 async function startBundle(header, fileName) {
     const { name } = parse(fileName);
     const isTAR = isArchiveTAR(name, true);
-    if (isTAR === false) {
+    if (isTAR === null) {
         throw new Error(`File name ${fileName} is not detected as a .tar archive`);
     }
     const writeStream = createWriteStream(join(ARCHIVES_DIR, fileName));

@@ -50,14 +50,14 @@ async function createArchiveJSON() {
         if (!dirent.isFile() || dirent.name === "archives.json") {
             continue;
         }
+
         console.log(`createArchiveJSON: ${dirent.name}`);
-        const { name } = parse(dirent.name);
-        const isTAR = isArchiveTAR(name);
-        if (!isTAR) {
+        const isTAR = isArchiveTAR(parse(dirent.name).name);
+        if (isTAR === null) {
             continue;
         }
-        const [type, addonName, version] = isTAR;
 
+        const [type, addonName, version] = isTAR;
         const jsonType = json[type.toLowerCase() === "addon" ? "addons" : "modules"];
         if (Reflect.has(jsonType, addonName)) {
             jsonType[addonName].push(version);
@@ -67,17 +67,17 @@ async function createArchiveJSON() {
             jsonType[addonName] = [version];
         }
     }
+
     await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(json, null, 4));
 }
 
 /**
  * @function splitTAR
  * @param {!string} filename
- * @returns {string[]}
+ * @returns {[string, string, string]}
  */
 function splitTAR(filename) {
-    const { name } = parse(filename);
-    const [type, ...rest] = name.split("-");
+    const [type, ...rest] = parse(filename).name.split("-");
     const version = rest.pop();
     const addonName = rest.join("-");
 
@@ -88,14 +88,14 @@ function splitTAR(filename) {
  * @function isArchiveTAR
  * @param {!string} fileName
  * @param {boolean} [typeToLower=false]
- * @returns {boolean}
+ * @returns {null | [string, string, string]}
  */
 function isArchiveTAR(fileName, typeToLower = false) {
     const [type, ...rest] = fileName.split("-");
     if (!ARCHIVE_TYPES.has(type)) {
         console.error(`Type ${type} unknow`);
 
-        return false;
+        return null;
     }
 
     const version = rest.pop();
@@ -103,7 +103,7 @@ function isArchiveTAR(fileName, typeToLower = false) {
     if (semver.valid(version) === null) {
         console.error(`Version ${version} from ${addonName} not a valid semver`);
 
-        return false;
+        return null;
     }
 
     if (typeToLower === true) {
