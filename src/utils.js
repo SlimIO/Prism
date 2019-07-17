@@ -16,16 +16,6 @@ const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
 
 /**
  * @async
- * @function writeArchiveJSON
- * @param {*} obj
- * @returns {Promise<void>}
- */
-async function writeArchiveJSON(obj) {
-    await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(obj, null, 4));
-}
-
-/**
- * @async
  * @function addInArchiveJSON
  * @param {!string} type
  * @param {!string} addonName
@@ -45,7 +35,7 @@ async function addInArchiveJSON(type, addonName, version) {
     else {
         archiveJSON[type][addonName] = [version];
     }
-    await writeArchiveJSON(archiveJSON);
+    await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(archiveJSON, null, 4));
 }
 
 /**
@@ -78,7 +68,7 @@ async function createArchiveJSON() {
             jsonType[addonName] = [version];
         }
     }
-    await writeArchiveJSON(json);
+    await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(json, null, 4));
 }
 
 /**
