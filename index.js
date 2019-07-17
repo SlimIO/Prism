@@ -19,7 +19,6 @@ const premove = require("premove");
 const TimeMap = require("@slimio/timemap");
 const Addon = require("@slimio/addon");
 
-
 // Require Internal Dependencies
 const {
     constants: { ADDONS_DIR, ARCHIVES_DIR, ARCHIVE_TYPES },
@@ -31,7 +30,6 @@ const {
 // CONSTANTS
 const STREAM_ID = new TimeMap(30000);
 
-
 // Vars
 const pipeAsync = promisify(pipeline);
 
@@ -39,8 +37,8 @@ const Prism = new Addon("prism")
     .lockOn("events")
     .lockOn("socket");
 
-Prism.on("awake", () => {
-    Prism.ready();
+Prism.on("awake", async() => {
+    await Prism.ready();
 });
 
 STREAM_ID.on("expiration", (key, value) => {
