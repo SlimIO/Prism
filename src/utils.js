@@ -1,9 +1,7 @@
 "use strict";
 
 // Require Node.js Dependencies
-const {
-    access, mkdir, readdir, writeFile, readFile
-} = require("fs").promises;
+const { readdir, writeFile, readFile } = require("fs").promises;
 const { join, parse, resolve } = require("path");
 
 // Require Third-party Dependencies
@@ -15,22 +13,6 @@ const ADDONS_DIR = join(__dirname, "..", "..");
 const ARCHIVES_DIR = resolve(ADDONS_DIR, "..", "archives");
 const ARCHIVES_JSON_PATH = join(ARCHIVES_DIR, "archives.json");
 const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
-
-/**
- * @async
- * @function createArchivesDir
- * @returns {Promise<void>}
- */
-async function createArchivesDir() {
-    try {
-        await access(ARCHIVES_DIR);
-    }
-    catch ({ code }) {
-        if (code === "ENOENT") {
-            await mkdir(ARCHIVES_DIR);
-        }
-    }
-}
 
 /**
  * @async
@@ -149,7 +131,6 @@ module.exports = {
     ARCHIVES_JSON_PATH,
     ARCHIVE_TYPES,
 
-    createArchivesDir,
     addInArchiveJSON,
     createArchiveJSON,
     splitTAR,

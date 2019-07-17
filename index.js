@@ -25,7 +25,6 @@ const {
     ADDONS_DIR,
     ARCHIVES_DIR,
     ARCHIVE_TYPES,
-    createArchivesDir,
     addInArchiveJSON,
     createArchiveJSON,
     isArchiveTAR
@@ -50,7 +49,7 @@ STREAM_ID.on("expiration", (key, value) => {
 });
 
 Prism.on("start", async() => {
-    await createArchivesDir();
+    await mkdir(ARCHIVES_DIR, { recursive: true });
     await createArchiveJSON();
 });
 
