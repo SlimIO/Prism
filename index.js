@@ -27,27 +27,32 @@ const {
     isArchiveTAR
 } = require("./src/utils");
 
-// CONSTANTS
-const STREAM_ID = new TimeMap(30000);
-
 // Vars
 const pipeAsync = promisify(pipeline);
+const STREAM_ID = new TimeMap(30000);
+
+STREAM_ID.on("expiration", async(key, { name, writeStream }) => {
+    Prism.logger.writeLine(`STREAM_ID key ${key} has expired!`);
+    try {
+        writeStream.destroy();
+        await unlink(name);
+    }
+    catch (err) {
+        console.error(err);
+    }
+});
 
 const Prism = new Addon("prism")
     .lockOn("events")
     .lockOn("socket");
 
-Prism.on("awake", async() => {
-    await Prism.ready();
-});
-
-STREAM_ID.on("expiration", (key, value) => {
-    console.log(`STREAM_ID key ${key} has expired!`);
-});
-
 Prism.on("start", async() => {
     await mkdir(ARCHIVES_DIR, { recursive: true });
     await createArchiveJSON();
+});
+
+Prism.on("awake", async() => {
+    await Prism.ready();
 });
 
 /**
@@ -69,8 +74,6 @@ async function brotliDecompress(type, addonName, version, force = false) {
             tar.extract(tarExtractDir)
         );
         await mkdir(join(ADDONS_DIR, addonName), { recursive: true });
-
-        console.log("mkdir ok");
 
         const files = await readdir(tarExtractDir);
         // eslint-disable-next-line
@@ -101,6 +104,7 @@ async function startBundle(header, fileName) {
     if (isTAR === null) {
         throw new Error(`File name ${fileName} is not detected as a .tar archive`);
     }
+
     const writeStream = createWriteStream(join(ARCHIVES_DIR, fileName));
     const id = uuid();
     const [type, addonName, version] = isTAR;
@@ -118,18 +122,21 @@ async function startBundle(header, fileName) {
  * @returns {Promise<void>}
  */
 async function sendBundle(header, id, chunk) {
+    if (!STREAM_ID.has(id)) {
+        throw new Error(`Write stream doesn't exist for id ${id}`);
+    }
+
     try {
-        if (!STREAM_ID.has(id)) {
-            throw new Error(`Write stream doesn't exist for id ${id}`);
-        }
         const { writeStream } = STREAM_ID.get(id);
         writeStream.write(Buffer.from(chunk.data));
     }
     catch (err) {
         const { writeStream, name } = STREAM_ID.get(id);
         writeStream.destroy();
-        await unlink(name);
         STREAM_ID.delete(id);
+
+        // unsafe ?
+        await unlink(name);
         throw err;
     }
 }
@@ -142,6 +149,10 @@ async function sendBundle(header, id, chunk) {
  * @returns {Promise<boolean>}
  */
 async function endBundle(header, id) {
+    if (!STREAM_ID.has(id)) {
+        throw new Error(`Write stream doesn't exist for id ${id}`);
+    }
+
     try {
         const { writeStream, type, addonName, version } = STREAM_ID.get(id);
         writeStream.destroy();
@@ -152,7 +163,7 @@ async function endBundle(header, id) {
         return true;
     }
     catch (err) {
-        console.log(err);
+        Prism.logger.writeLine(err.message);
 
         return false;
     }
