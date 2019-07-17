@@ -22,9 +22,7 @@ const Addon = require("@slimio/addon");
 
 // Require Internal Dependencies
 const {
-    ADDONS_DIR,
-    ARCHIVES_DIR,
-    ARCHIVE_TYPES,
+    constants: { ADDONS_DIR, ARCHIVES_DIR, ARCHIVE_TYPES },
     addInArchiveJSON,
     createArchiveJSON,
     isArchiveTAR

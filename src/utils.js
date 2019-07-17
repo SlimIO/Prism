@@ -125,14 +125,16 @@ function isArchiveTAR(fileName, typeToLower = false) {
     return [type, addonName, version];
 }
 
-module.exports = {
-    ADDONS_DIR,
-    ARCHIVES_DIR,
-    ARCHIVES_JSON_PATH,
-    ARCHIVE_TYPES,
+module.exports = Object.freeze({
+    constants: Object.freeze({
+        ADDONS_DIR,
+        ARCHIVES_DIR,
+        ARCHIVES_JSON_PATH,
+        ARCHIVE_TYPES
+    }),
 
     addInArchiveJSON,
     createArchiveJSON,
     splitTAR,
     isArchiveTAR
-};
+});
