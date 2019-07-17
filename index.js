@@ -1,19 +1,19 @@
+"use strict";
+
 // Require Node.js Dependencies
 const zlib = require("zlib");
-const {
-    createWriteStream,
-    createReadStream,
-    promises: { access, mkdir, readdir, writeFile, readFile }
-} = require("fs");
 const { join, parse } = require("path");
 const { pipeline } = require("stream");
 const { promisify } = require("util");
+const {
+    createWriteStream, createReadStream,
+    promises: { mkdir, readdir, readFile }
+} = require("fs");
 
 // Require Third-party Dependencies
 const uuid = require("uuid/v4");
 const tar = require("tar-fs");
 const premove = require("premove");
-const semver = require("semver");
 
 // Require SlimIO Dependencies
 const TimeMap = require("@slimio/timemap");
@@ -25,14 +25,11 @@ const {
     ADDONS_DIR,
     ARCHIVES_DIR,
     ARCHIVE_TYPES,
-
     createArchivesDir,
     addInArchiveJSON,
     createArchiveJSON,
-    splitTAR,
     isArchiveTAR
 } = require("./src/utils");
-
 
 // CONSTANTS
 const STREAM_ID = new TimeMap(30000);
@@ -57,41 +54,51 @@ Prism.on("start", async() => {
     await createArchiveJSON();
 });
 
-// eslint-disable-next-line max-params
+/**
+ * @async
+ * @function brotliDecompress
+ * @param {!string} type
+ * @param {!string} addonName
+ * @param {!string} version
+ * @param {boolean} [force=false]
+ * @returns {Promise<void>}
+ */
 async function brotliDecompress(type, addonName, version, force = false) {
     const fileName = `${type}-${addonName}-${version}.tar`;
     const tarExtractDir = join(ARCHIVES_DIR, "temp", addonName);
 
-    await pipeAsync(
-        createReadStream(join(ARCHIVES_DIR, fileName)),
-        tar.extract(tarExtractDir)
-    );
-
-
     try {
-        await mkdir(join(ADDONS_DIR, addonName));
-    }
-    catch (err) {
-        // Ignore
-    }
-
-    console.log("mkdir ok");
-
-    const files = await readdir(tarExtractDir);
-    // eslint-disable-next-line
-    const streamPromises = files.map((file) => {
-        return pipeAsync(
-            createReadStream(join(tarExtractDir, file)),
-            zlib.createBrotliDecompress(),
-            createWriteStream(join(ADDONS_DIR, addonName, file))
+        await pipeAsync(
+            createReadStream(join(ARCHIVES_DIR, fileName)),
+            tar.extract(tarExtractDir)
         );
-    });
-    await Promise.all(streamPromises);
+        await mkdir(join(ADDONS_DIR, addonName), { recursive: true });
 
-    await premove(tarExtractDir);
+        console.log("mkdir ok");
+
+        const files = await readdir(tarExtractDir);
+        // eslint-disable-next-line
+        const streamPromises = files.map((file) => {
+            return pipeAsync(
+                createReadStream(join(tarExtractDir, file)),
+                zlib.createBrotliDecompress(),
+                createWriteStream(join(ADDONS_DIR, addonName, file))
+            );
+        });
+        await Promise.all(streamPromises);
+    }
+    finally {
+        await premove(tarExtractDir);
+    }
 }
 
-// add force option if already exist ?
+/**
+ * @async
+ * @function startBundle
+ * @param {*} header
+ * @param {!string} fileName
+ * @returns {Promise<string>}
+ */
 async function startBundle(header, fileName) {
     const { name } = parse(fileName);
     const isTAR = isArchiveTAR(name, true);
@@ -106,6 +113,14 @@ async function startBundle(header, fileName) {
     return id;
 }
 
+/**
+ * @async
+ * @function sendBundle
+ * @param {*} header
+ * @param {!string} id
+ * @param {!object} chunk
+ * @returns {Promise<void>}
+ */
 async function sendBundle(header, id, chunk) {
     try {
         if (!STREAM_ID.has(id)) {
@@ -123,6 +138,13 @@ async function sendBundle(header, id, chunk) {
     }
 }
 
+/**
+ * @async
+ * @function endBundle
+ * @param {*} header
+ * @param {!string} id
+ * @returns {Promise<boolean>}
+ */
 async function endBundle(header, id) {
     try {
         const { writeStream, type, addonName, version } = STREAM_ID.get(id);
@@ -140,7 +162,15 @@ async function endBundle(header, id) {
     }
 }
 
-// eslint-disable-next-line max-params
+/**
+ * @async
+ * @function installArchive
+ * @param {*} header
+ * @param {!string} name
+ * @param {!string} version
+ * @param {*} options
+ * @returns {Promise<void>}
+ */
 async function installArchive(header, name, version, options = Object.create(null)) {
     if (typeof name !== "string") {
         throw new TypeError("Name param must be a typeof <string>");
@@ -163,7 +193,6 @@ async function installArchive(header, name, version, options = Object.create(nul
         if (!keys.includes(name)) {
             throw new Error(`Name ${name} is not repertoried`);
         }
-        const versions = archiveJSON[JSONType][name];
     }
     await brotliDecompress(type, name, ver, force);
 

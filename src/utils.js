@@ -1,3 +1,5 @@
+"use strict";
+
 // Require Node.js Dependencies
 const {
     access, mkdir, readdir, writeFile, readFile
@@ -14,6 +16,11 @@ const ARCHIVES_DIR = resolve(ADDONS_DIR, "..", "archives");
 const ARCHIVES_JSON_PATH = join(ARCHIVES_DIR, "archives.json");
 const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
 
+/**
+ * @async
+ * @function createArchivesDir
+ * @returns {Promise<void>}
+ */
 async function createArchivesDir() {
     try {
         await access(ARCHIVES_DIR);
@@ -25,10 +32,24 @@ async function createArchivesDir() {
     }
 }
 
+/**
+ * @async
+ * @function writeArchiveJSON
+ * @param {*} obj
+ * @returns {Promise<void>}
+ */
 async function writeArchiveJSON(obj) {
     await writeFile(ARCHIVES_JSON_PATH, JSON.stringify(obj, null, 4));
 }
 
+/**
+ * @async
+ * @function addInArchiveJSON
+ * @param {!string} type
+ * @param {!string} addonName
+ * @param {!string} version
+ * @returns {Promise<void>}
+ */
 async function addInArchiveJSON(type, addonName, version) {
     const archiveFile = await readFile(ARCHIVES_JSON_PATH, { encoding: "utf8" });
     const archiveJSON = JSON.parse(archiveFile);
@@ -45,6 +66,11 @@ async function addInArchiveJSON(type, addonName, version) {
     await writeArchiveJSON(archiveJSON);
 }
 
+/**
+ * @async
+ * @function createArchiveJSON
+ * @returns {Promise<void>}
+ */
 async function createArchiveJSON() {
     const json = { addons: {}, modules: {} };
     const files = await readdir(ARCHIVES_DIR, { withFileTypes: true });
@@ -73,6 +99,11 @@ async function createArchiveJSON() {
     await writeArchiveJSON(json);
 }
 
+/**
+ * @function splitTAR
+ * @param {!string} filename
+ * @returns {string[]}
+ */
 function splitTAR(filename) {
     const { name } = parse(filename);
     const [type, ...rest] = name.split("-");
@@ -82,6 +113,12 @@ function splitTAR(filename) {
     return [type, addonName, version];
 }
 
+/**
+ * @function isArchiveTAR
+ * @param {!string} fileName
+ * @param {boolean} [typeToLower=false]
+ * @returns {boolean}
+ */
 function isArchiveTAR(fileName, typeToLower = false) {
     const [type, ...rest] = fileName.split("-");
     if (!ARCHIVE_TYPES.has(type)) {
