@@ -20,6 +20,10 @@
         "archive",
         "manager"
     ],
+    "files": [
+        "index.js",
+        "src/*.js"
+    ],
     "author": "SlimIO",
     "license": "MIT",
     "bugs": {
