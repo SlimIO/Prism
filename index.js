@@ -1,21 +1,15 @@
 "use strict";
 
 // Require Node.js Dependencies
-const zlib = require("zlib");
 const { join, parse } = require("path");
-const { pipeline } = require("stream");
-const { promisify } = require("util");
 const {
-    createWriteStream, createReadStream,
-    promises: { mkdir, readdir, readFile }
+    createWriteStream,
+    promises: { mkdir, readFile }
 } = require("fs");
 
 // Require Third-party Dependencies
 const uuid = require("uuid/v4");
-const tar = require("tar-fs");
-const premove = require("premove");
-
-// Require SlimIO Dependencies
+const tarball = require("@slimio/tarball");
 const TimeMap = require("@slimio/timemap");
 const Addon = require("@slimio/addon");
 
@@ -27,8 +21,7 @@ const {
     isArchiveTAR
 } = require("./src/utils");
 
-// Vars
-const pipeAsync = promisify(pipeline);
+// CONSTANTS
 const STREAM_ID = new TimeMap(30000);
 
 STREAM_ID.on("expiration", async(key, { name, writeStream }) => {
@@ -57,46 +50,12 @@ Prism.on("awake", async() => {
 
 /**
  * @async
- * @function brotliDecompress
- * @param {!string} type
- * @param {!string} addonName
- * @param {!string} version
- * @param {boolean} [force=false]
- * @returns {Promise<void>}
- */
-async function brotliDecompress(type, addonName, version, force = false) {
-    const fileName = `${type}-${addonName}-${version}.tar`;
-    const tarExtractDir = join(ARCHIVES_DIR, "temp", addonName);
-
-    try {
-        await pipeAsync(
-            createReadStream(join(ARCHIVES_DIR, fileName)),
-            tar.extract(tarExtractDir)
-        );
-        await mkdir(join(ADDONS_DIR, addonName), { recursive: true });
-
-        const files = await readdir(tarExtractDir);
-        // eslint-disable-next-line
-        const streamPromises = files.map((file) => {
-            return pipeAsync(
-                createReadStream(join(tarExtractDir, file)),
-                zlib.createBrotliDecompress(),
-                createWriteStream(join(ADDONS_DIR, addonName, file))
-            );
-        });
-        await Promise.all(streamPromises);
-    }
-    finally {
-        await premove(tarExtractDir);
-    }
-}
-
-/**
- * @async
  * @function startBundle
- * @param {*} header
+ * @param {!Addon.CallbackHeader} header
  * @param {!string} fileName
  * @returns {Promise<string>}
+ *
+ * @throws {Error}
  */
 async function startBundle(header, fileName) {
     const { name } = parse(fileName);
@@ -116,14 +75,16 @@ async function startBundle(header, fileName) {
 /**
  * @async
  * @function sendBundle
- * @param {*} header
+ * @param {!Addon.CallbackHeader} header
  * @param {!string} id
- * @param {!object} chunk
+ * @param {!Array<number>} chunk
  * @returns {Promise<void>}
+ *
+ * @throws {Error}
  */
 async function sendBundle(header, id, chunk) {
     if (!STREAM_ID.has(id)) {
-        throw new Error(`Write stream doesn't exist for id ${id}`);
+        throw new Error(`Unknow bundle with id: ${id}`);
     }
 
     try {
@@ -144,9 +105,11 @@ async function sendBundle(header, id, chunk) {
 /**
  * @async
  * @function endBundle
- * @param {*} header
+ * @param {!Addon.CallbackHeader} header
  * @param {!string} id
  * @returns {Promise<boolean>}
+ *
+ * @throws {Error}
  */
 async function endBundle(header, id) {
     if (!STREAM_ID.has(id)) {
@@ -172,11 +135,16 @@ async function endBundle(header, id) {
 /**
  * @async
  * @function installArchive
- * @param {*} header
+ * @param {!Addon.CallbackHeader} header
  * @param {!string} name
  * @param {!string} version
- * @param {*} options
+ * @param {object} [options]
+ * @param {string} [options.type="Addon"]
+ * @param {boolean} [options.force=false]
  * @returns {Promise<void>}
+ *
+ * @throws {TypeError}
+ * @throws {Error}
  */
 async function installArchive(header, name, version, options = Object.create(null)) {
     if (typeof name !== "string") {
@@ -185,13 +153,13 @@ async function installArchive(header, name, version, options = Object.create(nul
     if (typeof version !== "string") {
         throw new TypeError("Version param must be a typeof <string>");
     }
+
     const { type = "Addon", force = false } = options;
     if (!ARCHIVE_TYPES.has(type)) {
         throw new Error(`Type ${type} is not repertoried`);
     }
     const JSONType = type === "Addon" ? "addons" : "modules";
 
-    const ver = version;
     if (version === "latest") {
         const archiveFile = await readFile(ARCHIVES_JSON_PATH, { encoding: "utf8" });
         const archiveJSON = JSON.parse(archiveFile);
@@ -201,16 +169,20 @@ async function installArchive(header, name, version, options = Object.create(nul
             throw new Error(`Name ${name} is not repertoried`);
         }
     }
-    await brotliDecompress(type, name, ver, force);
+
+    await tarball.extract(
+        join(ARCHIVES_DIR, `${type}-${name}-${version}.tar`),
+        join(ADDONS_DIR, name)
+    );
 
     if (JSONType === "addons") {
         await Prism.sendOne("gate.set_config", [`addons.${name}`, { active: true }]);
     }
 }
 
-Prism.registerCallback("start_bundle", startBundle);
-Prism.registerCallback("send_bundle", sendBundle);
-Prism.registerCallback("end_bundle", endBundle);
-Prism.registerCallback("install_archive", installArchive);
+Prism.registerCallback(startBundle);
+Prism.registerCallback(sendBundle);
+Prism.registerCallback(endBundle);
+Prism.registerCallback(installArchive);
 
 module.exports = Prism;
