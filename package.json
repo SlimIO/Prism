@@ -33,7 +33,7 @@
     "dependencies": {
         "@slimio/addon": "^0.20.2",
         "@slimio/tarball": "^0.1.0",
-        "@slimio/timemap": "^0.2.0",
+        "@slimio/timemap": "^0.3.0",
         "semiver": "^1.1.0",
         "semver": "^6.1.1",
         "uuid": "^3.3.2"
