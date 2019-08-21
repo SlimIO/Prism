@@ -21,8 +21,17 @@ const {
     isArchiveTAR
 } = require("./src/utils");
 
-// CONSTANTS
-const STREAM_ID = new TimeMap(30000);
+/**
+ * @typedef {object} BundleStore
+ * @property {WriteStream} writeStream
+ * @property {string} name
+ * @property {string} type
+ * @property {string} addonName
+ * @property {string} version
+ */
+
+/** @type {TimeMap<BundleStore>} */
+const STREAM_ID = new TimeMap(10000);
 
 STREAM_ID.on("expiration", async(key, { name, writeStream }) => {
     Prism.logger.writeLine(`STREAM_ID key ${key} has expired!`);
@@ -88,7 +97,7 @@ async function sendBundle(header, id, chunk) {
     }
 
     try {
-        const { writeStream } = STREAM_ID.get(id);
+        const { writeStream } = STREAM_ID.get(id, true);
         writeStream.write(Buffer.from(chunk.data));
     }
     catch (err) {
