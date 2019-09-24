@@ -5,6 +5,10 @@
 
 SlimIO Prism Addon. This addon has been designed to be a Distribution Server (it manage archive of Addons).
 
+<p align="center">
+<img src="https://i.imgur.com/JgBzmuT.png">
+</p>
+
 ## Getting Started
 This package is available in the SlimIO Package Registry and can be easily installed with [SlimIO CLI](https://github.com/SlimIO/CLI).
 
