@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "description": "SlimIO distribution server addon",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "test": "cross-env psp && ava --verbose",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
