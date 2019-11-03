@@ -5,8 +5,8 @@ import { join, parse, resolve, dirname } from "path";
 const { readdir, writeFile, readFile } = fs;
 
 // Require Third-party Dependencies
-const semver = require("semver");
-const semiver = require("semiver");
+import semver from "semver";
+import semiver from "semiver";
 
 // Node.js constants
 const __dirname = dirname(fileURLToPath(import.meta.url));
