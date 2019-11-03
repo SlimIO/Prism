@@ -1,18 +1,28 @@
-"use strict";
-
 // Require Node.js Dependencies
-const { readdir, writeFile, readFile } = require("fs").promises;
-const { join, parse, resolve } = require("path");
+import { promises as fs } from "fs";
+import { fileURLToPath } from "url";
+import { join, parse, resolve, dirname } from "path";
+const { readdir, writeFile, readFile } = fs;
 
 // Require Third-party Dependencies
 const semver = require("semver");
 const semiver = require("semiver");
+
+// Node.js constants
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // CONSTANTS
 const ADDONS_DIR = join(__dirname, "..", "..");
 const ARCHIVES_DIR = resolve(ADDONS_DIR, "..", "archives");
 const ARCHIVES_JSON_PATH = join(ARCHIVES_DIR, "archives.json");
 const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
+
+export const constants = Object.freeze({
+    ADDONS_DIR,
+    ARCHIVES_DIR,
+    ARCHIVES_JSON_PATH,
+    ARCHIVE_TYPES
+});
 
 /**
  * @async
@@ -22,7 +32,7 @@ const ARCHIVE_TYPES = new Set(["Addon", "Module"]);
  * @param {!string} version
  * @returns {Promise<void>}
  */
-async function addInArchiveJSON(type, addonName, version) {
+export async function addInArchiveJSON(type, addonName, version) {
     const archiveFile = await readFile(ARCHIVES_JSON_PATH, { encoding: "utf8" });
     const archiveJSON = JSON.parse(archiveFile);
     if (Reflect.has(archiveJSON[type], addonName)) {
@@ -43,7 +53,7 @@ async function addInArchiveJSON(type, addonName, version) {
  * @function createArchiveJSON
  * @returns {Promise<void>}
  */
-async function createArchiveJSON() {
+export async function createArchiveJSON() {
     const json = { addons: {}, modules: {} };
     const files = await readdir(ARCHIVES_DIR, { withFileTypes: true });
     for (const dirent of files) {
@@ -76,7 +86,7 @@ async function createArchiveJSON() {
  * @param {!string} filename
  * @returns {[string, string, string]}
  */
-function splitTAR(filename) {
+export function splitTAR(filename) {
     const [type, ...rest] = parse(filename).name.split("-");
     const version = rest.pop();
     const addonName = rest.join("-");
@@ -90,7 +100,7 @@ function splitTAR(filename) {
  * @param {boolean} [typeToLower=false]
  * @returns {null | [string, string, string]}
  */
-function isArchiveTAR(fileName, typeToLower = false) {
+export function isArchiveTAR(fileName, typeToLower = false) {
     const [type, ...rest] = fileName.split("-");
     if (!ARCHIVE_TYPES.has(type)) {
         console.error(`Type ${type} unknow`);
@@ -113,17 +123,3 @@ function isArchiveTAR(fileName, typeToLower = false) {
     // pass type to lower case ?
     return [type, addonName, version];
 }
-
-module.exports = Object.freeze({
-    constants: Object.freeze({
-        ADDONS_DIR,
-        ARCHIVES_DIR,
-        ARCHIVES_JSON_PATH,
-        ARCHIVE_TYPES
-    }),
-
-    addInArchiveJSON,
-    createArchiveJSON,
-    splitTAR,
-    isArchiveTAR
-});

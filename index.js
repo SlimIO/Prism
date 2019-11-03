@@ -1,19 +1,15 @@
-"use strict";
-
 // Require Node.js Dependencies
-const { join, parse } = require("path");
-const {
-    createWriteStream,
-    promises: { mkdir, readFile }
-} = require("fs");
+import { join, parse } from "path";
+import { createWriteStream, promises as fs } from "fs";
+const { mkdir, readFile } = fs;
 
 // Require Third-party Dependencies
-const uuid = require("uuid/v4");
-const tarball = require("@slimio/tarball");
-const TimeMap = require("@slimio/timemap");
-const Addon = require("@slimio/addon");
+import uuid from "uuid";
+import tarball from "@slimio/tarball";
+import TimeMap from "@slimio/timemap";
+import Addon from "@slimio/addon";
 
-// Require Internal Dependencies
+// Require Internal Dependencices
 const {
     constants: { ADDONS_DIR, ARCHIVES_DIR, ARCHIVE_TYPES },
     addInArchiveJSON,
@@ -74,7 +70,7 @@ async function startBundle(header, fileName) {
     }
 
     const writeStream = createWriteStream(join(ARCHIVES_DIR, fileName));
-    const id = uuid();
+    const id = uuid.v4();
     const [type, addonName, version] = isTAR;
     STREAM_ID.set(id, { writeStream, name, type, addonName, version });
 
@@ -194,4 +190,4 @@ Prism.registerCallback(sendBundle);
 Prism.registerCallback(endBundle);
 Prism.registerCallback(installArchive);
 
-module.exports = Prism;
+export default Prism;
