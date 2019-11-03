@@ -10,12 +10,8 @@ import TimeMap from "@slimio/timemap";
 import Addon from "@slimio/addon";
 
 // Require Internal Dependencices
-const {
-    constants: { ADDONS_DIR, ARCHIVES_DIR, ARCHIVE_TYPES },
-    addInArchiveJSON,
-    createArchiveJSON,
-    isArchiveTAR
-} = require("./src/utils");
+import { addInArchiveJSON, createArchiveJSON, isArchiveTAR, constants } from "./src/utils.js";
+const { ADDONS_DIR, ARCHIVES_DIR, ARCHIVES_JSON_PATH, ARCHIVE_TYPES } = constants;
 
 /**
  * @typedef {object} BundleStore
