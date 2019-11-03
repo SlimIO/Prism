@@ -31,7 +31,7 @@
     },
     "homepage": "https://github.com/SlimIO/Prism#readme",
     "dependencies": {
-        "@slimio/addon": "^0.20.2",
+        "@slimio/addon": "^0.22.1",
         "@slimio/tarball": "^0.1.0",
         "@slimio/timemap": "^0.3.0",
         "semiver": "^1.1.0",
