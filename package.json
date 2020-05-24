@@ -36,8 +36,8 @@
         "@slimio/tarball": "^0.1.0",
         "@slimio/timemap": "^0.3.0",
         "semiver": "^1.1.0",
-        "semver": "^6.1.1",
-        "uuid": "^3.3.2"
+        "semver": "^7.3.2",
+        "uuid": "^8.1.0"
     },
     "devDependencies": {
         "@commitlint/cli": "^8.3.5",
