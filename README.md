@@ -50,7 +50,7 @@ async function main() {
 
     try {
         await sendArchive(client, "Addon-aggregator-0.1.0.tar");
-        
+
         // Send install callback (depending on your need).
         await client.sendOne("prism.install_archive", ["aggregator", "0.1.0"]);
     }
@@ -66,7 +66,12 @@ main().catch(console.error);
 
 |Name|Refactoring|Security Risk|Usage|
 |---|---|---|---|
+|[@lukeed/uuid](https://github.com/lukeed/uuid#readme)|Minor|Low|A tiny (230B), fast, and cryptographically secure UUID (v4) generator|
 |[@slimio/addon](https://github.com/SlimIO/Addon)|Minor|Low|Addon container|
+|[@slimio/tarball](https://github.com/SlimIO/Tarball)|⚠️Major|High|SlimIO Addon & module archive tarball packer/extractor|
+|[@slimio/timemap](https://github.com/SlimIO/TimeMap)|Minor|Low|ES6 Map-Like implementation with keys that have a defined timelife|
+|[semiver](https://github.com/lukeed/semiver#readme)|Minor|Low|A tiny (187B) utility to compare semver strings.|
+|[semver](https://github.com/npm/node-semver)|⚠️Major|Low|Semver parser/utilities for node|
 
 ## License
 MIT

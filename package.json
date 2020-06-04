@@ -32,12 +32,12 @@
     },
     "homepage": "https://github.com/SlimIO/Prism#readme",
     "dependencies": {
+        "@lukeed/uuid": "^1.0.1",
         "@slimio/addon": "^0.22.1",
         "@slimio/tarball": "^0.1.0",
         "@slimio/timemap": "^0.3.0",
         "semiver": "^1.1.0",
-        "semver": "^7.3.2",
-        "uuid": "^8.1.0"
+        "semver": "^7.3.2"
     },
     "devDependencies": {
         "@commitlint/cli": "^8.3.5",

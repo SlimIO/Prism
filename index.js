@@ -4,7 +4,7 @@ import { createWriteStream, promises as fs } from "fs";
 const { mkdir, readFile } = fs;
 
 // Require Third-party Dependencies
-import uuid from "uuid";
+import uuid from "@lukeed/uuid";
 import tarball from "@slimio/tarball";
 import TimeMap from "@slimio/timemap";
 import Addon from "@slimio/addon";
@@ -66,7 +66,7 @@ async function startBundle(header, fileName) {
     }
 
     const writeStream = createWriteStream(join(ARCHIVES_DIR, fileName));
-    const id = uuid.v4();
+    const id = uuid();
     const [type, addonName, version] = isTAR;
     STREAM_ID.set(id, { writeStream, name, type, addonName, version });
 
